@@ -6,7 +6,7 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // CORS configuration
+  // CORS
   const isDevelopment = process.env.NODE_ENV !== 'production';
   const allowedOrigins = process.env.FRONTEND_URL
     ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
@@ -14,9 +14,8 @@ async function bootstrap() {
 
   app.enableCors({
     origin: isDevelopment
-      ? true // Allow all origins in development
+      ? true
       : (origin, callback) => {
-        // In production, check against allowed origins
         if (!origin || allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {
@@ -29,22 +28,35 @@ async function bootstrap() {
     exposedHeaders: ['Authorization'],
   });
 
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }));
 
-  const config = new DocumentBuilder()
-    .setTitle('Itemely API')
-    .setDescription('The Itemely API documentation')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  // Swagger (тільки в development або якщо явно дозволено)
+  if (isDevelopment || process.env.ENABLE_SWAGGER === 'true') {
+    const config = new DocumentBuilder()
+      .setTitle('Itemely API')
+      .setDescription('The Itemely API documentation')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
 
-  const port = process.env.PORT || 3005;
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api', app, document);
+  }
 
-  app.listen(port, '0.0.0.0', () => {
-    console.log(`🚀 Application is running on: http://localhost:${port}`);
-    console.log(`📚 Swagger documentation: http://localhost:${port}/api`);
-  })
+  // === Головне для Render ===
+  const port = parseInt(process.env.PORT || '3000', 10);
+
+  await app.listen(port, '0.0.0.0');
+
+  console.log(`🚀 Application is running on: http://0.0.0.0:${port}`);
+  console.log(`📚 Swagger: http://0.0.0.0:${port}/api`);
 }
-bootstrap();
+
+bootstrap().catch(err => {
+  console.error('❌ Bootstrap error:', err);
+  process.exit(1);
+});
