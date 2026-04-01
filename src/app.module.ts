@@ -33,18 +33,33 @@ import { UsersModule } from './users/users.module';
     }),
     NestCacheModule.register<RedisClientOptions>({
       // store: redisStore,
-      url: process.env.REDIS_HOST,
+      url: process.env.REDIS_URL || process.env.REDIS_HOST,
+      username: process.env.REDIS_USERNAME,
+      password: process.env.REDIS_PASSWORD,
       ttl: 300, // cache for 5 minutes
       isGlobal: true,
     }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        connection: {
-          host: configService.get<string>('REDIS_HOST'),
-          port: parseInt(configService.get<string>('REDIS_PORT') || '6379', 10),
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const redisUrl = configService.get<string>('REDIS_URL');
+        if (redisUrl) {
+          // Якщо передано повний URL (rediss://...)
+          return {
+            connection: new (require('ioredis'))(redisUrl, {
+              maxRetriesPerRequest: null,
+            }),
+          };
+        }
+        return {
+          connection: {
+            host: configService.get<string>('REDIS_HOST') || 'localhost',
+            port: parseInt(configService.get<string>('REDIS_PORT') || '6379', 10),
+            username: configService.get<string>('REDIS_USERNAME'),
+            password: configService.get<string>('REDIS_PASSWORD'),
+          },
+        };
+      },
       inject: [ConfigService],
     }),
     UsersModule,
