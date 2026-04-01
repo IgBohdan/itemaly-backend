@@ -30,8 +30,7 @@ import { UsersModule } from './users/users.module';
     }),
     NestCacheModule.register<RedisClientOptions>({
       // store: redisStore,
-      // host: process.env.REDIS_HOST || 'localhost',
-      // port: parseInt(process.env.REDIS_PORT || '6379', 10),
+      url: process.env.REDIS_HOST,
       ttl: 300, // cache for 5 minutes
       isGlobal: true,
     }),
@@ -39,7 +38,7 @@ import { UsersModule } from './users/users.module';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         connection: {
-          host: configService.get<string>('REDIS_HOST') || 'localhost',
+          host: configService.get<string>('REDIS_HOST'),
           port: parseInt(configService.get<string>('REDIS_PORT') || '6379', 10),
         },
       }),
@@ -57,4 +56,4 @@ import { UsersModule } from './users/users.module';
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }
