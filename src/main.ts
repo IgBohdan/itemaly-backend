@@ -16,13 +16,13 @@ async function bootstrap() {
     origin: isDevelopment
       ? true // Allow all origins in development
       : (origin, callback) => {
-          // In production, check against allowed origins
-          if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-          } else {
-            callback(new Error('Not allowed by CORS'));
-          }
-        },
+        // In production, check against allowed origins
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
@@ -41,8 +41,10 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   const port = process.env.PORT || 3005;
-  await app.listen(port, '0.0.0.0');
-  console.log(`🚀 Application is running on: http://localhost:${port}`);
-  console.log(`📚 Swagger documentation: http://localhost:${port}/api`);
+
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`🚀 Application is running on: http://localhost:${port}`);
+    console.log(`📚 Swagger documentation: http://localhost:${port}/api`);
+  })
 }
 bootstrap();
